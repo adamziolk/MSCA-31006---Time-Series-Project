@@ -1,0 +1,152 @@
+---
+title: "MSCA 31006 - Time Series Project"
+author: "Adam ZIolkowski"
+date: "February 22, 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(fpp)
+library(tseries)
+library(ggplot2)
+library(forecast)
+library(TSA)
+library(zoo)
+library(arfima)
+```
+
+## Data Exploration
+
+```{r DataExploration}
+# Load the Dataset
+full_dataset <- read.csv("C:/Users/Adam-PC/Desktop/Homework/MSCA 31006 - Time Series/Project/GlobalTemperatures.csv")
+full_dataset <- full_dataset[, 2]
+
+# Prepare the Dataset
+sum(is.na(full_dataset$LandAverageTemperature))
+full_dataset$LandAverageTemperature <- na.locf(full_dataset$LandAverageTemperature, fromLast = TRUE)
+
+
+# Convert the Dataset into a Time Series Object
+tsdata <- ts(data = full_dataset, start = c(1750, 1), end = c(2015, 12), frequency = 12)
+
+
+# Plot the Dataset
+plot(tsdata)
+
+tsdisplay(tsdata)
+  # Clear Long Term ACF/PACF Patterns
+
+
+# Split Dataset
+train <- window(tsdata, start = c(1750, 1), end = c(2004, 12))
+test <- window(tsdata, start = c(2005, 1), end = c(2015, 1))
+
+
+# Check for Transformation Requirements
+plot(train)
+qqnorm(train)
+
+BoxCox.lambda(train)
+
+# Testing various lambda values to find optimal normality
+qqnorm(BoxCox(train, lambda = .95), ylim = c(-5, 20))
+qqnorm(BoxCox(train, lambda = .85), ylim = c(-5, 20))
+qqnorm(BoxCox(train, lambda = .75), ylim = c(-5, 20)) # This normality plot shows the best normality distribution
+qqnorm(BoxCox(train, lambda = 1.3), ylim = c(-5, 20))
+qqnorm(BoxCox(train, lambda = 1), ylim = c(-5, 20))
+
+
+# Check for Stationarity
+# The null hypothesis for the KPSS test is that the data is trend stationary
+kpss.test(train) # p = 0.01 >> Reject >> Not Stationary
+kpss.test(diff(train, differences = 1)) # p = 0.01 >> Reject >> Not Stationary
+kpss.test(diff(train, differences = 2)) # p = 0.01 >> Reject >> Not Stationary
+
+
+```
+
+
+
+
+## Model 1 - sARIMA
+
+
+```{r Model1}
+
+# Examine automated model
+auto_sarima <- auto.arima(train, seasonal = TRUE)
+summary(auto_sarima) #ARIMA(2, 0, 2)(2, 1, 0)[12]
+
+
+# EACF - Identify appropriate Model Orders
+eacf(train) # Acceptable orders ARMA(0, 2), ARMA(1, 2) >> Parsimony - we will examine ARMA(0, 2)
+
+
+```
+
+
+
+## Model 2 - ARFIMA
+
+```{r Model2}
+arfima <- arfima(train)
+
+d <- summary(arfima)$coef[[1]][1] # Fractional d value = 0.038
+# 0 < d < 0.5 >> ARFIMA process exhibits long memory
+
+
+
+```
+
+
+
+
+## Model 3 - Exponential Smoothing
+
+```{r Model3}
+
+
+
+```
+
+
+
+
+## Model Comparisons
+
+sARIMA(2, 0, 2)(2, 1, 0)[12]
+AIC=8052.4   AICc=8052.45   BIC=8100.58
+
+ARFIMA
+AIC = 8618.344
+
+
+
+## Cross Validation
+
+```{r CrossValidation}
+
+
+```
+
+
+
+
+## Forecasts vs Test Data
+
+```{r Forecasts}
+
+
+```
+
+
+
+
+## Notes
+
+
+
+Cross validaiton - Check for Model Stability
+# Ljung-Box - Check if residuals are independent
