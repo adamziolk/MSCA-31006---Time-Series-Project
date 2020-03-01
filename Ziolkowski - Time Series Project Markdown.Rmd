@@ -80,16 +80,16 @@ kpss.test(diff(train, differences = 2)) # p = 0.01 >> Reject >> Not Stationary
 ```{r Model1}
 
 # Examine automated model
-auto_sarima <- auto.arima(train, seasonal = TRUE)
+auto_sarima <- auto.arima(train, seasonal = TRUE, lambda = 0.75)
 summary(auto_sarima) #ARIMA(2, 0, 2)(2, 1, 0)[12]
-
+checkresiduals(auto_sarima)
 
 # EACF - Identify appropriate Model Orders
 eacf(train) # Acceptable orders ARMA(0, 2), ARMA(1, 2) >> Parsimony - we will examine ARMA(0, 2)
 
 # We expect this model to perform poorly, since the KPSS tests for integer differencing all yielded non-stationary results
-manual_sarma <- Arima(train, order = c(0, 0, 2))
-
+manual_sarma <- Arima(train, order = c(0, 0, 2), seasonal = c(1, 1, 0)[12], lambda = 0.75)
+checkresiduals(manual_sarma)
 
 ```
 
@@ -98,9 +98,9 @@ manual_sarma <- Arima(train, order = c(0, 0, 2))
 ## Model 2 - ARFIMA
 
 ```{r Model2}
-arfima <- arfima(train)
+arfima <- arfima(train, differencing = True)
 
-d <- summary(arfima)$coef[[1]][1] # Fractional d value = 0.038
+d <- coef(arfima)[1] # Fractional d value = 0.499
 # 0 < d < 0.5 >> ARFIMA process exhibits long memory
 
 
